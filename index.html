@@ -271,9 +271,6 @@
       <div class="search-wrap">
         <input type="text" id="search" placeholder="Search by name, description, language..." autofocus />
       </div>
-      <select id="filter-category" class="sort-select" title="Filter by category">
-        <option value="">All categories</option>
-      </select>
       <select id="filter-language" class="sort-select" title="Filter by language">
         <option value="">All languages</option>
       </select>
@@ -310,116 +307,18 @@
     let repos = [];
     let ghToken = localStorage.getItem(TOKEN_KEY) || '';
 
-    const CATEGORIES_ORDER = [
-      'Games & interactive fiction', 'Data & analytics', 'AI / ML', 'Finance & trading',
-      'Product & startup', 'Music & audio', 'Creative & media', 'Web & apps',
-      'Training & dev tools', 'Travel & adventure', 'UAP / phenomena', 'Misc'
-    ];
+    let fetchError = null;
 
-    const REPO_HAS_PAGES = ['repositories_toc', 'uap_disclosure_game', 'uap_timeline', 'nvidia'];
-
-    const REPO_CATEGORY = {
-      'repositories_toc': 'Web & apps',
-      'neuromancer-text': 'Games & interactive fiction', 'uap_disclosure_game': 'Games & interactive fiction',
-      'you_are_the_hero': 'Games & interactive fiction', 'lachasseautresor': 'Games & interactive fiction',
-      'opening_trainer': 'Games & interactive fiction', 'RoleAndPlay': 'Games & interactive fiction',
-      'Balance-of-Power': 'Games & interactive fiction',
-      'dataengineering': 'Data & analytics', 'datascience': 'Data & analytics', 'dbt-fundamentals': 'Data & analytics',
-      'RAG_2025': 'Data & analytics', 'threadtracker': 'Data & analytics',
-      'Deep-Live-Cam': 'AI / ML', 'libriscribe': 'AI / ML', 'colorizer': 'AI / ML',
-      'nvidia': 'Finance & trading', 'nvidia-supplychain-analysis-MCP': 'Finance & trading',
-      'producthunter': 'Product & startup', 'productmaker': 'Product & startup',
-      'reddit-startup-idea-miner': 'Product & startup', 'yc_analyzer': 'Product & startup',
-      'MuseVision': 'Music & audio', 'mp3tomidi': 'Music & audio',
-      'new_tempsx': 'Creative & media', 'twilightzone': 'Creative & media', 'newsletter': 'Creative & media',
-      'Les-Yeux-de-Mona': 'Creative & media',
-      'website': 'Web & apps', 'ad_generator': 'Web & apps', 'business_simulator': 'Web & apps',
-      'cursor-course': 'Training & dev tools', 'skills-build-applications-w-copilot-agent-mode': 'Training & dev tools',
-      'skills_sandbox': 'Training & dev tools',
-      'find-your-next-adventure': 'Travel & adventure',
-      'uap_timeline': 'UAP / phenomena',
-      'bk_light': 'Misc'
-    };
-
-    const REPO_DESCRIPTIONS = {
-      'repositories_toc': 'Web page listing GitHub repos with links, dates, search, and category sort.',
-      'ad_generator': 'Automated ad generator.',
-      'Balance-of-Power': 'Web adaptation of Chris Crawford\'s Cold War geopolitical strategy game (USA vs USSR).',
-      'bk_light': 'Python suite for BK-Light RGB LED matrices over BLE: clocks, animations, visual effects.',
-      'business_simulator': 'Interactive business simulator to test economic models.',
-      'colorizer': 'Web app for colorizing B&W images and videos using DeOldify ONNX models.',
-      'cursor-course': 'Udemy course: Vibe Code full-stack apps with Cursor, MCP, NextJS, Supabase.',
-      'dataengineering': 'Data engineering projects portfolio (pipelines, ETL).',
-      'datascience': 'Data science side projects.',
-      'dbt-fundamentals': 'Starter dbt project with dbt run and dbt test commands.',
-      'Deep-Live-Cam': 'Real-time face swap and video deepfake with a single image.',
-      'find-your-next-adventure': 'Python tool to extract adventure destinations from PDF travel guides to JSON.',
-      'lachasseautresor': 'AI adventure book generator inspired by 1980s French TV show La Chasse au Trésor.',
-      'Les-Yeux-de-Mona': 'Web app showcasing artworks from Les Yeux de Mona (Louvre, Orsay, Beaubourg).',
-      'libriscribe': 'AI-powered book writing assistant from concept to manuscript.',
-      'mp3tomidi': 'Convert piano recordings to MIDI with hand separation and chord analysis.',
-      'MuseVision': 'Digital music score reader with traditional notation and piano roll simultaneously.',
-      'neuromancer-text': 'Text adventure reimagining the 1988 Interplay cyberpunk RPG and Gibson\'s novel. Explore Chiba City, jack into the matrix, reach one of four endings. Rich terminal UI, English/Français.',
-      'newsletter': 'Claude Code sub-agent system for researching, writing, and publishing newsletters.',
-      'new_tempsx': 'AI generates Temps X-style episodes (1980s French sci-fi TV) for modern topics.',
-      'nvidia': 'Interactive web app visualizing NVIDIA supply chain with stock trends and filters.',
-      'nvidia-supplychain-analysis-MCP': 'MCP server for Nvidia supply chain analysis (health, technical, earnings).',
-      'opening_trainer': 'Web app for mastering chess openings (Stonewall, Torre, Colle) with AI and Stockfish.',
-      'producthunter': 'CLI tool scraping ProductHunt daily with Claude AI company insights for entrepreneurs.',
-      'productmaker': 'Product creation and validation tool.',
-      'RAG_2025': 'RAG app with hybrid search and cross-encoder re-ranking for French content.',
-      'reddit-startup-idea-miner': 'Mines Reddit for startup ideas with AI analysis and pain score framework.',
-      'RoleAndPlay': 'Complete RPG with AI Game Master for Pangaea universe (5 races, 5 classes).',
-      'skills-build-applications-w-copilot-agent-mode': 'Build full-stack app with GitHub Copilot agent mode in under an hour.',
-      'skills_sandbox': 'Sandbox for Claude / Cursor Skills.',
-      'threadtracker': 'Firefox extension for tracking and managing email threads in Outlook Web.',
-      'twilightzone': 'Interactive surreal display for classic Twilight Zone episodes (1959-1964).',
-      'uap_disclosure_game': 'Board game: 2-6 players race for Full Disclosure via UAP trivia and investigation.',
-      'uap_timeline': 'Bilingual (FR/EN) Astro site exploring 81 years of UAP events (1945–2026) through timeline, documents, documentary, people, incidents, DIRD reports.',
-      'website': 'Flutter\'s website — contributions welcome (Jekyll, Dart, Firebase).',
-      'yc_analyzer': 'Scrape YC companies and get AI insights for founders, investors, researchers.',
-      'you_are_the_hero': 'Web gamebook reader converting EPUB choose-your-own-adventure books to interactive stories.'
-    };
-
-    const FALLBACK_REPOS = [
-      {"name":"repositories_toc","desc":null,"url":"https://github.com/nmarchand73/repositories_toc","created":"2026-03-08T19:48:33Z","updated":"2026-03-08T19:51:10Z","language":"HTML","stars":0,"topics":[],"fork":false,"has_pages":true},
-      {"name":"ad_generator","desc":null,"url":"https://github.com/nmarchand73/ad_generator","created":"2025-05-29T20:21:46Z","updated":"2025-05-29T20:33:20Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
-      {"name":"Balance-of-Power","desc":null,"url":"https://github.com/nmarchand73/Balance-of-Power","created":"2025-10-26T23:02:07Z","updated":"2025-10-26T23:11:37Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
-      {"name":"bk_light","desc":null,"url":"https://github.com/nmarchand73/bk_light","created":"2026-01-18T19:23:06Z","updated":"2026-01-18T19:34:04Z","language":"HTML","stars":0,"topics":[],"fork":false},
-      {"name":"business_simulator","desc":null,"url":"https://github.com/nmarchand73/business_simulator","created":"2025-09-10T22:28:30Z","updated":"2025-12-01T21:30:42Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
-      {"name":"colorizer","desc":null,"url":"https://github.com/nmarchand73/colorizer","created":"2025-12-03T22:28:29Z","updated":"2025-12-03T23:02:19Z","language":"HTML","stars":0,"topics":[],"fork":false},
-      {"name":"cursor-course","desc":null,"url":"https://github.com/nmarchand73/cursor-course","created":"2025-05-29T16:38:14Z","updated":"2025-05-29T16:59:43Z","language":"TypeScript","stars":0,"topics":[],"fork":true},
-      {"name":"dataengineering","desc":"Several data engineering projects done this year","url":"https://github.com/nmarchand73/dataengineering","created":"2017-04-24T17:34:16Z","updated":"2017-04-24T17:34:16Z","language":null,"stars":0,"topics":[],"fork":false},
-      {"name":"datascience","desc":"Several datascience projects delivered this year on my free time","url":"https://github.com/nmarchand73/datascience","created":"2017-04-24T17:33:27Z","updated":"2017-04-24T17:36:16Z","language":null,"stars":1,"topics":[],"fork":false},
-      {"name":"dbt-fundamentals","desc":null,"url":"https://github.com/nmarchand73/dbt-fundamentals","created":"2022-02-23T18:03:50Z","updated":"2022-02-23T18:03:50Z","language":null,"stars":0,"topics":[],"fork":false},
-      {"name":"Deep-Live-Cam","desc":"real time face swap and one-click video deepfake with only a single image","url":"https://github.com/nmarchand73/Deep-Live-Cam","created":"2025-05-06T06:44:04Z","updated":"2025-05-06T06:44:04Z","language":null,"stars":0,"topics":[],"fork":true},
-      {"name":"find-your-next-adventure","desc":"A Python project for parsing adventure guides and extracting destination information","url":"https://github.com/nmarchand73/find-your-next-adventure","created":"2025-08-04T20:23:59Z","updated":"2025-11-27T11:38:10Z","language":"Python","stars":1,"topics":[],"fork":false},
-      {"name":"lachasseautresor","desc":null,"url":"https://github.com/nmarchand73/lachasseautresor","created":"2025-08-30T21:18:43Z","updated":"2025-08-30T23:14:54Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"Les-Yeux-de-Mona","desc":null,"url":"https://github.com/nmarchand73/Les-Yeux-de-Mona","created":"2025-12-30T14:26:58Z","updated":"2026-01-07T21:55:08Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
-      {"name":"libriscribe","desc":"Libriscribe is an AI-powered open-source book creation system. Multi-agent approach for writing books.","url":"https://github.com/nmarchand73/libriscribe","created":"2025-09-07T19:09:13Z","updated":"2025-09-07T19:09:13Z","language":null,"stars":0,"topics":[],"fork":true},
-      {"name":"mp3tomidi","desc":null,"url":"https://github.com/nmarchand73/mp3tomidi","created":"2025-10-19T12:20:59Z","updated":"2025-10-19T18:16:23Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"MuseVision","desc":"A digital music score reader with dual visualization","url":"https://github.com/nmarchand73/MuseVision","created":"2025-04-04T07:01:58Z","updated":"2025-04-04T07:55:24Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
-      {"name":"neuromancer-text","desc":null,"url":"https://github.com/nmarchand73/neuromancer-text","created":"2026-02-09T16:51:20Z","updated":"2026-02-09T18:42:32Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"newsletter","desc":null,"url":"https://github.com/nmarchand73/newsletter","created":"2025-09-10T21:33:43Z","updated":"2025-09-10T22:21:00Z","language":null,"stars":0,"topics":[],"fork":false},
-      {"name":"new_tempsx","desc":null,"url":"https://github.com/nmarchand73/new_tempsx","created":"2025-12-13T17:43:27Z","updated":"2026-02-23T05:28:36Z","language":"Python","stars":2,"topics":[],"fork":false},
-      {"name":"nvidia","desc":null,"url":"https://github.com/nmarchand73/nvidia","created":"2025-11-02T22:47:36Z","updated":"2025-11-02T23:08:29Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
-      {"name":"nvidia-supplychain-analysis-MCP","desc":null,"url":"https://github.com/nmarchand73/nvidia-supplychain-analysis-MCP","created":"2025-11-25T21:37:20Z","updated":"2025-11-25T21:58:31Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"opening_trainer","desc":null,"url":"https://github.com/nmarchand73/opening_trainer","created":"2025-08-12T07:04:48Z","updated":"2025-08-12T07:47:56Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"producthunter","desc":null,"url":"https://github.com/nmarchand73/producthunter","created":"2025-08-08T07:31:04Z","updated":"2025-08-08T08:42:08Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"productmaker","desc":null,"url":"https://github.com/nmarchand73/productmaker","created":"2023-09-24T14:46:05Z","updated":"2025-09-11T10:57:35Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
-      {"name":"RAG_2025","desc":null,"url":"https://github.com/nmarchand73/RAG_2025","created":"2025-10-26T13:05:08Z","updated":"2025-10-26T13:11:08Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"reddit-startup-idea-miner","desc":null,"url":"https://github.com/nmarchand73/reddit-startup-idea-miner","created":"2025-08-04T20:12:27Z","updated":"2025-08-04T20:17:08Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"RoleAndPlay","desc":null,"url":"https://github.com/nmarchand73/RoleAndPlay","created":"2025-10-18T22:10:58Z","updated":"2025-10-18T22:20:39Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"skills-build-applications-w-copilot-agent-mode","desc":"Exercise: Build my application with Copilot agent mode","url":"https://github.com/nmarchand73/skills-build-applications-w-copilot-agent-mode","created":"2025-05-16T09:28:02Z","updated":"2025-05-16T09:28:21Z","language":"Shell","stars":0,"topics":[],"fork":false},
-      {"name":"skills_sandbox","desc":null,"url":"https://github.com/nmarchand73/skills_sandbox","created":"2025-12-04T22:24:57Z","updated":"2026-01-11T22:21:54Z","language":"Python","stars":1,"topics":[],"fork":false},
-      {"name":"threadtracker","desc":null,"url":"https://github.com/nmarchand73/threadtracker","created":"2025-04-07T23:22:26Z","updated":"2025-04-07T23:28:20Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
-      {"name":"twilightzone","desc":null,"url":"https://github.com/nmarchand73/twilightzone","created":"2025-12-06T23:04:20Z","updated":"2026-03-06T19:26:19Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
-      {"name":"uap_disclosure_game","desc":null,"url":"https://github.com/nmarchand73/uap_disclosure_game","created":"2026-02-21T21:53:57Z","updated":"2026-02-21T23:03:17Z","language":"Python","stars":0,"topics":[],"fork":false},
-      {"name":"uap_timeline","desc":null,"url":"https://github.com/nmarchand73/uap_timeline","created":"2026-02-20T13:50:38Z","updated":"2026-03-07T18:48:49Z","language":"Astro","stars":0,"topics":[],"fork":false},
-      {"name":"website","desc":"Flutter web site","url":"https://github.com/nmarchand73/website","created":"2019-11-24T18:22:31Z","updated":"2019-11-24T18:22:32Z","language":null,"stars":0,"topics":[],"fork":true},
-      {"name":"yc_analyzer","desc":null,"url":"https://github.com/nmarchand73/yc_analyzer","created":"2025-10-05T17:53:56Z","updated":"2025-10-05T22:05:53Z","language":"Julia","stars":0,"topics":[],"fork":false},
-      {"name":"you_are_the_hero","desc":null,"url":"https://github.com/nmarchand73/you_are_the_hero","created":"2025-08-15T16:00:41Z","updated":"2025-08-30T21:16:24Z","language":"Python","stars":0,"topics":[],"fork":false}
-    ];
+    function getCategoriesOrder(repoList) {
+      const langCounts = {};
+      for (const r of repoList) {
+        const lang = r.language || 'No language';
+        langCounts[lang] = (langCounts[lang] || 0) + 1;
+      }
+      return Object.entries(langCounts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([lang]) => lang);
+    }
 
     function formatDate(iso) {
       if (!iso) return '—';
@@ -429,9 +328,9 @@
 
     function normalize(r) {
       const name = r.name;
-      const desc = REPO_DESCRIPTIONS[name] || r.description || null;
-      const category = REPO_CATEGORY[name] || 'Misc';
-      const hasPages = r.has_pages ?? REPO_HAS_PAGES.includes(name);
+      const desc = r.description || null;
+      const category = r.language || 'No language';
+      const hasPages = r.has_pages ?? false;
       const repoUrl = r.html_url || r.url;
       const owner = r.owner?.login || (repoUrl && repoUrl.match(/github\.com\/([^\/]+)\//)?.[1]) || GITHUB_USER;
       return {
@@ -492,6 +391,7 @@
         : `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`;
       const headers = { ...authHeaders() };
 
+      fetchError = null;
       try {
         const [restRes, commitMap] = await Promise.all([
           fetch(restUrl, { headers }),
@@ -506,8 +406,9 @@
           norm.commits = commitMap[r.name] ?? null;
           return norm;
         });
-      } catch (_) {
-        repos = FALLBACK_REPOS.map(normalize);
+      } catch (err) {
+        fetchError = err;
+        repos = [];
       }
       render();
     }
@@ -515,7 +416,6 @@
     function filterAndSort() {
       const q = (document.getElementById('search').value || '').toLowerCase().trim();
       const sortVal = document.getElementById('sort').value;
-      const filterCategory = (document.getElementById('filter-category')?.value || '').trim();
       const filterLanguage = (document.getElementById('filter-language')?.value || '').trim();
       const filterVisibility = (document.getElementById('filter-visibility')?.value || '').trim();
       const filterHasPage = (document.getElementById('filter-haspage')?.value || '').trim();
@@ -533,8 +433,7 @@
           ].join(' ').toLowerCase();
           if (!haystack.includes(q)) return false;
         }
-        if (filterCategory && (r.category || 'Misc') !== filterCategory) return false;
-        if (filterLanguage && (r.language || '') !== filterLanguage) return false;
+        if (filterLanguage && (r.language || 'No language') !== filterLanguage) return false;
         if (filterVisibility === 'public' && r.private) return false;
         if (filterVisibility === 'private' && !r.private) return false;
         if (filterHasPage === 'yes' && !r.hasPages) return false;
@@ -568,7 +467,7 @@
 
       const byCategory = {};
       for (const r of list) {
-        const cat = r.category || 'Misc';
+        const cat = r.category || 'No language';
         if (!byCategory[cat]) byCategory[cat] = [];
         byCategory[cat].push(r);
       }
@@ -576,32 +475,17 @@
     }
 
     function populateFilters() {
-      const catSelect = document.getElementById('filter-category');
       const langSelect = document.getElementById('filter-language');
       const visSelect = document.getElementById('filter-visibility');
-      if (!catSelect || !langSelect) return;
+      if (!langSelect) return;
 
-      const savedCat = catSelect.value;
       const savedLang = langSelect.value;
-
-      while (catSelect.options.length > 1) catSelect.remove(1);
-      for (const c of CATEGORIES_ORDER) {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        catSelect.appendChild(opt);
-      }
-      const extras = [...new Set(repos.map(r => r.category || 'Misc').filter(c => !CATEGORIES_ORDER.includes(c)))].sort();
-      for (const c of extras) {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        catSelect.appendChild(opt);
-      }
-      if (savedCat && catSelect.querySelector(`option[value="${savedCat}"]`)) catSelect.value = savedCat;
-
       while (langSelect.options.length > 1) langSelect.remove(1);
-      const langs = [...new Set(repos.map(r => r.language).filter(Boolean))].sort();
+      const langs = [...new Set(repos.map(r => r.language || 'No language'))].sort((a, b) => {
+        if (a === 'No language') return 1;
+        if (b === 'No language') return -1;
+        return a.localeCompare(b);
+      });
       for (const lang of langs) {
         const opt = document.createElement('option');
         opt.value = lang;
@@ -633,10 +517,8 @@
       }
 
       let html = '';
-      const orderedCats = [...CATEGORIES_ORDER];
-      const extraCats = Object.keys(byCategory).filter(c => !CATEGORIES_ORDER.includes(c));
-      for (const c of extraCats) orderedCats.push(c);
-      const catsToShow = orderedCats.filter(c => byCategory[c] && byCategory[c].length > 0);
+      const filteredList = Object.values(byCategory).flat();
+      const catsToShow = getCategoriesOrder(filteredList).filter(c => byCategory[c] && byCategory[c].length > 0);
       for (const cat of catsToShow) {
         const list = byCategory[cat];
         html += `
@@ -692,7 +574,7 @@
 
     document.getElementById('search').addEventListener('input', render);
     document.getElementById('sort').addEventListener('change', render);
-    ['filter-category', 'filter-language', 'filter-visibility', 'filter-haspage', 'filter-fork'].forEach(id => {
+    ['filter-language', 'filter-visibility', 'filter-haspage', 'filter-fork'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', render);
     });
