@@ -271,6 +271,26 @@
       <div class="search-wrap">
         <input type="text" id="search" placeholder="Search by name, description, language..." autofocus />
       </div>
+      <select id="filter-category" class="sort-select" title="Filter by category">
+        <option value="">All categories</option>
+      </select>
+      <select id="filter-language" class="sort-select" title="Filter by language">
+        <option value="">All languages</option>
+      </select>
+      <select id="filter-visibility" class="sort-select" title="Filter by visibility">
+        <option value="">All</option>
+        <option value="public">Public only</option>
+        <option value="private">Private only</option>
+      </select>
+      <select id="filter-haspage" class="sort-select" title="Filter by published page">
+        <option value="">All</option>
+        <option value="yes">With live page</option>
+      </select>
+      <select id="filter-fork" class="sort-select" title="Filter by fork status">
+        <option value="">All</option>
+        <option value="own">Own repos only</option>
+        <option value="fork">Forks only</option>
+      </select>
       <select id="sort" class="sort-select">
         <option value="created-desc">Newest</option>
         <option value="created-asc">Oldest</option>
@@ -280,7 +300,6 @@
         <option value="name-desc">Name Z→A</option>
         <option value="stars-desc">Stars</option>
       </select>
-      <button id="refresh" class="refresh-btn">Refresh</button>
       <span class="repo-count" id="count">—</span>
     </div>
     <div id="content"></div>
@@ -496,17 +515,32 @@
     function filterAndSort() {
       const q = (document.getElementById('search').value || '').toLowerCase().trim();
       const sortVal = document.getElementById('sort').value;
+      const filterCategory = (document.getElementById('filter-category')?.value || '').trim();
+      const filterLanguage = (document.getElementById('filter-language')?.value || '').trim();
+      const filterVisibility = (document.getElementById('filter-visibility')?.value || '').trim();
+      const filterHasPage = (document.getElementById('filter-haspage')?.value || '').trim();
+      const filterFork = (document.getElementById('filter-fork')?.value || '').trim();
+
       let list = repos.filter(r => {
-        if (!q) return true;
-        const haystack = [
-          r.name,
-          r.desc || '',
-          r.category || '',
-          r.language || '',
-          r.private ? 'private' : '',
-          ...(r.topics || [])
-        ].join(' ').toLowerCase();
-        return haystack.includes(q);
+        if (q) {
+          const haystack = [
+            r.name,
+            r.desc || '',
+            r.category || '',
+            r.language || '',
+            r.private ? 'private' : '',
+            ...(r.topics || [])
+          ].join(' ').toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        if (filterCategory && (r.category || 'Misc') !== filterCategory) return false;
+        if (filterLanguage && (r.language || '') !== filterLanguage) return false;
+        if (filterVisibility === 'public' && r.private) return false;
+        if (filterVisibility === 'private' && !r.private) return false;
+        if (filterHasPage === 'yes' && !r.hasPages) return false;
+        if (filterFork === 'own' && r.fork) return false;
+        if (filterFork === 'fork' && !r.fork) return false;
+        return true;
       });
 
       const [field, dir] = sortVal.split('-');
@@ -541,7 +575,47 @@
       return byCategory;
     }
 
+    function populateFilters() {
+      const catSelect = document.getElementById('filter-category');
+      const langSelect = document.getElementById('filter-language');
+      const visSelect = document.getElementById('filter-visibility');
+      if (!catSelect || !langSelect) return;
+
+      const savedCat = catSelect.value;
+      const savedLang = langSelect.value;
+
+      while (catSelect.options.length > 1) catSelect.remove(1);
+      for (const c of CATEGORIES_ORDER) {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        catSelect.appendChild(opt);
+      }
+      const extras = [...new Set(repos.map(r => r.category || 'Misc').filter(c => !CATEGORIES_ORDER.includes(c)))].sort();
+      for (const c of extras) {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        catSelect.appendChild(opt);
+      }
+      if (savedCat && catSelect.querySelector(`option[value="${savedCat}"]`)) catSelect.value = savedCat;
+
+      while (langSelect.options.length > 1) langSelect.remove(1);
+      const langs = [...new Set(repos.map(r => r.language).filter(Boolean))].sort();
+      for (const lang of langs) {
+        const opt = document.createElement('option');
+        opt.value = lang;
+        opt.textContent = lang;
+        langSelect.appendChild(opt);
+      }
+      if (savedLang && langSelect.querySelector(`option[value="${savedLang}"]`)) langSelect.value = savedLang;
+
+      const hasPrivate = repos.some(r => r.private);
+      if (visSelect) visSelect.style.display = hasPrivate ? '' : 'none';
+    }
+
     function render() {
+      if (repos.length > 0) populateFilters();
       const byCategory = filterAndSort();
       const content = document.getElementById('content');
       const total = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0);
@@ -618,14 +692,9 @@
 
     document.getElementById('search').addEventListener('input', render);
     document.getElementById('sort').addEventListener('change', render);
-    document.getElementById('refresh').addEventListener('click', () => {
-      const btn = document.getElementById('refresh');
-      btn.disabled = true;
-      btn.textContent = 'Loading…';
-      fetchRepos().then(() => {
-        btn.disabled = false;
-        btn.textContent = 'Refresh';
-      });
+    ['filter-category', 'filter-language', 'filter-visibility', 'filter-haspage', 'filter-fork'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', render);
     });
 
     document.getElementById('auth-btn').addEventListener('click', () => {
