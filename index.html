@@ -546,7 +546,12 @@
       const content = document.getElementById('content');
       const total = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0);
       document.getElementById('count').textContent = `${total} / ${repos.length}`;
-      document.getElementById('subtitle').textContent = `${repos.length} repos · Links, dates, key info`;
+      const publicCount = repos.filter(r => !r.private).length;
+      const privateCount = repos.filter(r => r.private).length;
+      const countStr = privateCount > 0
+        ? `${repos.length} repos (${publicCount} public, ${privateCount} private)`
+        : `${repos.length} repos`;
+      document.getElementById('subtitle').textContent = `${countStr} · Links, dates, key info`;
 
       if (total === 0) {
         content.innerHTML = '<div class="empty-state">No repos match your search.</div>';
