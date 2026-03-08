@@ -344,20 +344,63 @@
       'yc_analyzer': 'Scrape YC companies and get AI insights for founders, investors, researchers.',
       'you_are_the_hero': 'Web gamebook reader converting EPUB choose-your-own-adventure books to interactive stories.'
     };
+
+    const CATEGORIES_ORDER = [
+      'Games & interactive fiction', 'Data & analytics', 'AI / ML', 'Finance & trading',
+      'Product & startup', 'Music & audio', 'Creative & media', 'Web & apps',
+      'Training & dev tools', 'Travel & adventure', 'UAP / phenomena', 'Misc'
+    ];
+
+    const REPO_CATEGORY = {
+      'repositories_toc': 'Web & apps',
+      'neuromancer-text': 'Games & interactive fiction',
+      'uap_disclosure_game': 'Games & interactive fiction',
+      'you_are_the_hero': 'Games & interactive fiction',
+      'lachasseautresor': 'Games & interactive fiction',
+      'opening_trainer': 'Games & interactive fiction',
+      'RoleAndPlay': 'Games & interactive fiction',
+      'Balance-of-Power': 'Games & interactive fiction',
+      'dataengineering': 'Data & analytics',
+      'datascience': 'Data & analytics',
+      'dbt-fundamentals': 'Data & analytics',
+      'RAG_2025': 'Data & analytics',
+      'threadtracker': 'Data & analytics',
+      'Deep-Live-Cam': 'AI / ML',
+      'libriscribe': 'AI / ML',
+      'colorizer': 'AI / ML',
+      'nvidia': 'Finance & trading',
+      'nvidia-supplychain-analysis-MCP': 'Finance & trading',
+      'producthunter': 'Product & startup',
+      'productmaker': 'Product & startup',
+      'reddit-startup-idea-miner': 'Product & startup',
+      'yc_analyzer': 'Product & startup',
+      'MuseVision': 'Music & audio',
+      'mp3tomidi': 'Music & audio',
+      'new_tempsx': 'Creative & media',
+      'twilightzone': 'Creative & media',
+      'newsletter': 'Creative & media',
+      'Les-Yeux-de-Mona': 'Creative & media',
+      'website': 'Web & apps',
+      'ad_generator': 'Web & apps',
+      'business_simulator': 'Web & apps',
+      'cursor-course': 'Training & dev tools',
+      'skills-build-applications-w-copilot-agent-mode': 'Training & dev tools',
+      'skills_sandbox': 'Training & dev tools',
+      'find-your-next-adventure': 'Travel & adventure',
+      'uap_timeline': 'UAP / phenomena',
+      'bk_light': 'Misc'
+    };
+
     let repos = [];
     let ghToken = localStorage.getItem(TOKEN_KEY) || '';
 
     let fetchError = null;
 
-    function getCategoriesOrder(repoList) {
-      const langCounts = {};
-      for (const r of repoList) {
-        const lang = r.language || 'No language';
-        langCounts[lang] = (langCounts[lang] || 0) + 1;
-      }
-      return Object.entries(langCounts)
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([lang]) => lang);
+    function getCategoriesOrder(byCategory) {
+      const orderedCats = [...CATEGORIES_ORDER];
+      const extraCats = Object.keys(byCategory).filter(c => !CATEGORIES_ORDER.includes(c));
+      for (const c of extraCats) orderedCats.push(c);
+      return orderedCats.filter(c => byCategory[c] && byCategory[c].length > 0);
     }
 
     function formatDate(iso) {
@@ -369,7 +412,7 @@
     function normalize(r) {
       const name = r.name;
       const desc = r.description || REPO_DESCRIPTIONS[name] || null;
-      const category = r.language || 'No language';
+      const category = REPO_CATEGORY[name] || 'Misc';
       const hasPages = r.has_pages ?? false;
       const repoUrl = r.html_url || r.url;
       const owner = r.owner?.login || (repoUrl && repoUrl.match(/github\.com\/([^\/]+)\//)?.[1]) || GITHUB_USER;
@@ -507,7 +550,7 @@
 
       const byCategory = {};
       for (const r of list) {
-        const cat = r.category || 'No language';
+        const cat = r.category || 'Misc';
         if (!byCategory[cat]) byCategory[cat] = [];
         byCategory[cat].push(r);
       }
@@ -557,8 +600,7 @@
       }
 
       let html = '';
-      const filteredList = Object.values(byCategory).flat();
-      const catsToShow = getCategoriesOrder(filteredList).filter(c => byCategory[c] && byCategory[c].length > 0);
+      const catsToShow = getCategoriesOrder(byCategory);
       for (const cat of catsToShow) {
         const list = byCategory[cat];
         html += `
