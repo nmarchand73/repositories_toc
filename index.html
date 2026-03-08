@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Repos GitHub · nmarchand73</title>
+  <title>GitHub Repos · nmarchand73</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;600&display=swap" rel="stylesheet" />
@@ -252,35 +252,35 @@
 <body>
   <div class="container">
     <header>
-      <h1>Repos GitHub · nmarchand73</h1>
-      <p class="subtitle" id="subtitle">37 dépôts · Liens, dates, infos clés</p>
+      <h1>GitHub Repos · nmarchand73</h1>
+      <p class="subtitle" id="subtitle">37 repos · Links, dates, key info</p>
     </header>
     <details class="auth-section">
-      <summary>Inclure les dépôts privés (token GitHub)</summary>
-      <p class="subtitle" style="margin: 0.5rem 0 0 0; font-size: 0.8rem;">Token avec scope <code>repo</code>. Stocké en local, jamais envoyé ailleurs.</p>
+      <summary>Include private repos (GitHub token)</summary>
+      <p class="subtitle" style="margin: 0.5rem 0 0 0; font-size: 0.8rem;">Token with <code>repo</code> scope. Stored locally, never sent elsewhere.</p>
       <div class="auth-row">
         <input type="password" id="gh-token" placeholder="ghp_xxxx..." autocomplete="off" />
-        <button type="button" id="auth-btn" class="refresh-btn">Charger avec token</button>
+        <button type="button" id="auth-btn" class="refresh-btn">Load with token</button>
         <label style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem;">
-          <input type="checkbox" id="auth-remember" /> Mémoriser
+          <input type="checkbox" id="auth-remember" /> Remember
         </label>
-        <button type="button" id="auth-clear" class="refresh-btn" style="background: transparent; border: 1px solid var(--border); display: none;">Déconnecter</button>
+        <button type="button" id="auth-clear" class="refresh-btn" style="background: transparent; border: 1px solid var(--border); display: none;">Disconnect</button>
       </div>
     </details>
     <div class="controls">
       <div class="search-wrap">
-        <input type="text" id="search" placeholder="Rechercher par nom, description, langage..." autofocus />
+        <input type="text" id="search" placeholder="Search by name, description, language..." autofocus />
       </div>
       <select id="sort" class="sort-select">
-        <option value="created-desc">Plus récents</option>
-        <option value="created-asc">Plus anciens</option>
-        <option value="updated-desc">Dernier commit</option>
+        <option value="created-desc">Newest</option>
+        <option value="created-asc">Oldest</option>
+        <option value="updated-desc">Last commit</option>
         <option value="commits-desc">Commits ↓</option>
-        <option value="name-asc">Nom A→Z</option>
-        <option value="name-desc">Nom Z→A</option>
-        <option value="stars-desc">Étoiles</option>
+        <option value="name-asc">Name A→Z</option>
+        <option value="name-desc">Name Z→A</option>
+        <option value="stars-desc">Stars</option>
       </select>
-      <button id="refresh" class="refresh-btn">Rafraîchir</button>
+      <button id="refresh" class="refresh-btn">Refresh</button>
       <span class="repo-count" id="count">—</span>
     </div>
     <div id="content"></div>
@@ -292,34 +292,34 @@
     let ghToken = localStorage.getItem(TOKEN_KEY) || '';
 
     const CATEGORIES_ORDER = [
-      'Jeux & fiction interactive', 'Data & analytics', 'IA / ML', 'Finance & trading',
-      'Product & startup', 'Musique & audio', 'Créatif & média', 'Web & apps',
-      'Formation & outils dev', 'Voyage & aventure', 'UAP / phénomènes', 'Divers'
+      'Games & interactive fiction', 'Data & analytics', 'AI / ML', 'Finance & trading',
+      'Product & startup', 'Music & audio', 'Creative & media', 'Web & apps',
+      'Training & dev tools', 'Travel & adventure', 'UAP / phenomena', 'Misc'
     ];
 
     const REPO_HAS_PAGES = ['repositories_toc', 'uap_disclosure_game', 'uap_timeline', 'nvidia'];
 
     const REPO_CATEGORY = {
       'repositories_toc': 'Web & apps',
-      'neuromancer-text': 'Jeux & fiction interactive', 'uap_disclosure_game': 'Jeux & fiction interactive',
-      'you_are_the_hero': 'Jeux & fiction interactive', 'lachasseautresor': 'Jeux & fiction interactive',
-      'opening_trainer': 'Jeux & fiction interactive', 'RoleAndPlay': 'Jeux & fiction interactive',
-      'Balance-of-Power': 'Jeux & fiction interactive',
+      'neuromancer-text': 'Games & interactive fiction', 'uap_disclosure_game': 'Games & interactive fiction',
+      'you_are_the_hero': 'Games & interactive fiction', 'lachasseautresor': 'Games & interactive fiction',
+      'opening_trainer': 'Games & interactive fiction', 'RoleAndPlay': 'Games & interactive fiction',
+      'Balance-of-Power': 'Games & interactive fiction',
       'dataengineering': 'Data & analytics', 'datascience': 'Data & analytics', 'dbt-fundamentals': 'Data & analytics',
       'RAG_2025': 'Data & analytics', 'threadtracker': 'Data & analytics',
-      'Deep-Live-Cam': 'IA / ML', 'libriscribe': 'IA / ML', 'colorizer': 'IA / ML',
+      'Deep-Live-Cam': 'AI / ML', 'libriscribe': 'AI / ML', 'colorizer': 'AI / ML',
       'nvidia': 'Finance & trading', 'nvidia-supplychain-analysis-MCP': 'Finance & trading',
       'producthunter': 'Product & startup', 'productmaker': 'Product & startup',
       'reddit-startup-idea-miner': 'Product & startup', 'yc_analyzer': 'Product & startup',
-      'MuseVision': 'Musique & audio', 'mp3tomidi': 'Musique & audio',
-      'new_tempsx': 'Créatif & média', 'twilightzone': 'Créatif & média', 'newsletter': 'Créatif & média',
-      'Les-Yeux-de-Mona': 'Créatif & média',
+      'MuseVision': 'Music & audio', 'mp3tomidi': 'Music & audio',
+      'new_tempsx': 'Creative & media', 'twilightzone': 'Creative & media', 'newsletter': 'Creative & media',
+      'Les-Yeux-de-Mona': 'Creative & media',
       'website': 'Web & apps', 'ad_generator': 'Web & apps', 'business_simulator': 'Web & apps',
-      'cursor-course': 'Formation & outils dev', 'skills-build-applications-w-copilot-agent-mode': 'Formation & outils dev',
-      'skills_sandbox': 'Formation & outils dev',
-      'find-your-next-adventure': 'Voyage & aventure',
-      'uap_timeline': 'UAP / phénomènes',
-      'bk_light': 'Divers'
+      'cursor-course': 'Training & dev tools', 'skills-build-applications-w-copilot-agent-mode': 'Training & dev tools',
+      'skills_sandbox': 'Training & dev tools',
+      'find-your-next-adventure': 'Travel & adventure',
+      'uap_timeline': 'UAP / phenomena',
+      'bk_light': 'Misc'
     };
 
     const REPO_DESCRIPTIONS = {
@@ -405,13 +405,13 @@
     function formatDate(iso) {
       if (!iso) return '—';
       const d = new Date(iso);
-      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+      return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
     function normalize(r) {
       const name = r.name;
       const desc = REPO_DESCRIPTIONS[name] || r.description || null;
-      const category = REPO_CATEGORY[name] || 'Divers';
+      const category = REPO_CATEGORY[name] || 'Misc';
       const hasPages = r.has_pages ?? REPO_HAS_PAGES.includes(name);
       const repoUrl = r.html_url || r.url;
       const owner = r.owner?.login || (repoUrl && repoUrl.match(/github\.com\/([^\/]+)\//)?.[1]) || GITHUB_USER;
@@ -481,7 +481,7 @@
         if (!restRes.ok) throw new Error(restRes.status);
         const data = await restRes.json();
         const owner = data[0]?.owner?.login || GITHUB_USER;
-        document.querySelector('h1').textContent = `Repos GitHub · ${owner}`;
+        document.querySelector('h1').textContent = `GitHub Repos · ${owner}`;
         repos = data.map(r => {
           const norm = normalize(r);
           norm.commits = commitMap[r.name] ?? null;
@@ -503,7 +503,7 @@
           r.desc || '',
           r.category || '',
           r.language || '',
-          r.private ? 'privé' : '',
+          r.private ? 'private' : '',
           ...(r.topics || [])
         ].join(' ').toLowerCase();
         return haystack.includes(q);
@@ -534,7 +534,7 @@
 
       const byCategory = {};
       for (const r of list) {
-        const cat = r.category || 'Divers';
+        const cat = r.category || 'Misc';
         if (!byCategory[cat]) byCategory[cat] = [];
         byCategory[cat].push(r);
       }
@@ -546,10 +546,10 @@
       const content = document.getElementById('content');
       const total = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0);
       document.getElementById('count').textContent = `${total} / ${repos.length}`;
-      document.getElementById('subtitle').textContent = `${repos.length} dépôts · Liens, dates, infos clés`;
+      document.getElementById('subtitle').textContent = `${repos.length} repos · Links, dates, key info`;
 
       if (total === 0) {
-        content.innerHTML = '<div class="empty-state">Aucun repo ne correspond à la recherche.</div>';
+        content.innerHTML = '<div class="empty-state">No repos match your search.</div>';
         return;
       }
 
@@ -574,7 +574,7 @@
                     </h3>
                     ${(r.fork || r.private || r.language || r.stars > 0) ? `
                     <div class="card-badges">
-                      ${r.private ? '<span class="badge badge-private">privé</span>' : ''}
+                      ${r.private ? '<span class="badge badge-private">private</span>' : ''}
                       ${r.fork ? '<span class="badge badge-fork">fork</span>' : ''}
                       ${r.language ? `<span class="badge badge-lang">${r.language}</span>` : ''}
                       ${r.stars > 0 ? `<span class="badge badge-stars">⭐ ${r.stars}</span>` : ''}
@@ -583,11 +583,11 @@
                   </div>
                   <div class="card-stats">
                     <div class="card-stat">
-                      <span class="card-stat-label">Créé</span>
+                      <span class="card-stat-label">Created</span>
                       <span class="card-stat-value">${formatDate(r.created)}</span>
                     </div>
                     <div class="card-stat">
-                      <span class="card-stat-label">Dernier commit</span>
+                      <span class="card-stat-label">Last commit</span>
                       <span class="card-stat-value">${formatDate(r.updated)}</span>
                     </div>
                     ${r.commits != null ? `
@@ -599,7 +599,7 @@
                   </div>
                   <div class="card-links">
                     <a href="${r.readmeUrl}" target="_blank" rel="noopener">📄 README</a>
-                    ${r.hasPages ? `<a href="https://${r.owner}.github.io/${r.name}/" target="_blank" rel="noopener">🌐 Page</a>` : ''}
+                    ${r.hasPages ? `<a href="https://${r.owner}.github.io/${r.name}/" target="_blank" rel="noopener">🌐 Live</a>` : ''}
                   </div>
                   <p class="card-desc">${r.desc || '—'}</p>
                 </article>
@@ -616,10 +616,10 @@
     document.getElementById('refresh').addEventListener('click', () => {
       const btn = document.getElementById('refresh');
       btn.disabled = true;
-      btn.textContent = 'Chargement…';
+      btn.textContent = 'Loading…';
       fetchRepos().then(() => {
         btn.disabled = false;
-        btn.textContent = 'Rafraîchir';
+        btn.textContent = 'Refresh';
       });
     });
 
@@ -632,19 +632,19 @@
       if (remember) localStorage.setItem(TOKEN_KEY, token);
       else localStorage.removeItem(TOKEN_KEY);
       input.value = '';
-      input.placeholder = 'Token actif';
+      input.placeholder = 'Token active';
       document.getElementById('auth-clear').style.display = 'inline-block';
       const btn = document.getElementById('auth-btn');
       btn.disabled = true;
-      btn.textContent = 'Chargement…';
+      btn.textContent = 'Loading…';
       fetchRepos().then(() => {
         btn.disabled = false;
-        btn.textContent = 'Charger avec token';
+        btn.textContent = 'Load with token';
       });
     });
 
     if (ghToken) {
-      document.getElementById('gh-token').placeholder = 'Token actif';
+      document.getElementById('gh-token').placeholder = 'Token active';
       document.getElementById('auth-clear').style.display = 'inline-block';
     }
     document.getElementById('auth-clear').addEventListener('click', () => {
@@ -652,7 +652,7 @@
       localStorage.removeItem(TOKEN_KEY);
       document.getElementById('gh-token').placeholder = 'ghp_xxxx...';
       document.getElementById('auth-clear').style.display = 'none';
-      document.querySelector('h1').textContent = 'Repos GitHub · ' + GITHUB_USER;
+      document.querySelector('h1').textContent = 'GitHub Repos · ' + GITHUB_USER;
       fetchRepos();
     });
     fetchRepos();
