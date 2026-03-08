@@ -193,6 +193,19 @@
     }
     .token-hint { margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted); }
     .token-hint a { color: var(--accent); }
+    .card-edit { margin-top: 0.5rem; font-size: 0.75rem; }
+    .card-edit a { color: var(--accent); cursor: pointer; text-decoration: none; }
+    .card-edit a:hover { text-decoration: underline; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 1rem;
+    }
+    .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; min-width: 320px; max-width: 480px; }
+    .modal h4 { margin-bottom: 1rem; font-size: 1rem; }
+    .modal label { display: block; margin-top: 0.75rem; margin-bottom: 0.3rem; font-size: 0.85rem; color: var(--text-muted); }
+    .modal textarea { width: 100%; min-height: 80px; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; resize: vertical; }
+    .modal select { width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
+    .modal-actions { margin-top: 1.25rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
   </style>
 </head>
 <body>
@@ -341,10 +354,18 @@
       return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
+    function inferDescFromName(name) {
+      const human = name.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return human ? `${human} — projet` : null;
+    }
+
     function normalize(r) {
       const name = r.name;
-      const desc = r.description || REPO_DESCRIPTIONS[name] || null;
-      const category = REPO_CATEGORY[name] || 'Divers';
+      const overrides = getOverrides()[name] || {};
+      let desc;
+      if (overrides.desc !== undefined) desc = overrides.desc || null;
+      else desc = r.description || REPO_DESCRIPTIONS[name] || inferDescFromName(name) || null;
+      const category = overrides.category !== undefined ? overrides.category : (REPO_CATEGORY[name] || 'Divers');
       return {
         name,
         desc,
@@ -361,6 +382,21 @@
     }
 
     const TOKEN_KEY = 'github_repos_token';
+    const OVERRIDES_KEY = 'github_repos_overrides';
+
+    function getOverrides() {
+      try {
+        const s = localStorage.getItem(OVERRIDES_KEY);
+        return s ? JSON.parse(s) : {};
+      } catch (_) { return {}; }
+    }
+    function setOverride(name, desc, category) {
+      const o = getOverrides();
+      if (desc !== undefined) o[name] = { ...(o[name] || {}), desc: desc || null };
+      if (category !== undefined) o[name] = { ...(o[name] || {}), category: category || null };
+      if (o[name] && !o[name].desc && !o[name].category) delete o[name];
+      try { localStorage.setItem(OVERRIDES_KEY, JSON.stringify(o)); } catch (_) {}
+    }
 
     function getStoredToken() {
       try {
@@ -473,6 +509,7 @@
                     ${r.stars > 0 ? `<span>⭐ ${r.stars}</span>` : ''}
                   </div>
                   <p class="card-desc">${r.desc || '—'}</p>
+                  <div class="card-edit"><a data-edit="${r.name}">✎ Modifier description / catégorie</a></div>
                 </article>
               `).join('')}
             </div>
@@ -480,7 +517,54 @@
         `;
       }
       content.innerHTML = html;
+
+      content.querySelectorAll('[data-edit]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          const name = el.getAttribute('data-edit');
+          const r = repos.find(x => x.name === name);
+          if (!r) return;
+          showEditModal(name, r.desc || '', r.category || 'Divers');
+        });
+      });
     }
+
+    function showEditModal(name, currentDesc, currentCat) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal">
+          <h4>Modifier : ${name}</h4>
+          <label>Description</label>
+          <textarea id="editDesc">${escapeHtml(currentDesc)}</textarea>
+          <label>Catégorie</label>
+          <select id="editCat">
+            ${CATEGORIES_ORDER.map(c => `<option value="${escapeHtml(c)}" ${c === currentCat ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+          </select>
+          <div class="modal-actions">
+            <button type="button" class="refresh-btn" id="editCancel">Annuler</button>
+            <button type="button" class="refresh-btn" id="editSave">Enregistrer</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const close = () => { overlay.remove(); };
+      overlay.querySelector('#editCancel').onclick = close;
+      overlay.querySelector('#editSave').onclick = () => {
+        const desc = overlay.querySelector('#editDesc').value.trim() || null;
+        const cat = overlay.querySelector('#editCat').value || null;
+        setOverride(name, desc, cat);
+        const idx = repos.findIndex(x => x.name === name);
+        if (idx >= 0) {
+          repos[idx].desc = desc;
+          repos[idx].category = cat;
+        }
+        close();
+        render();
+      };
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.querySelector('#editCancel').click(); };
+    }
+    function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     document.getElementById('token').value = getStoredToken();
     document.getElementById('saveToken').addEventListener('click', () => {
