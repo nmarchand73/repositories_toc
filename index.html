@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repos GitHub · nmarchand73</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --green: #3fb950;
+      --orange: #d29922;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-weight: 600;
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle { color: var(--text-muted); font-weight: 300; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .search-wrap input::placeholder { color: var(--text-muted); }
+    .search-wrap input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .sort-select {
+      padding: 0.6rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      min-width: 180px;
+      cursor: pointer;
+    }
+    .repo-count {
+      align-self: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 1px var(--accent-dim);
+    }
+    .card-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .card-title a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .card-title a:hover { text-decoration: underline; }
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .card-meta span { display: flex; align-items: center; gap: 0.25rem; }
+    .card-desc {
+      margin-top: 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .category-section {
+      margin-bottom: 2.5rem;
+    }
+    .category-title {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .category-badge {
+      background: var(--accent-dim);
+      color: var(--bg);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+    .badge-fork { background: rgba(210, 153, 34, 0.2); color: var(--orange); }
+    .badge-private { background: rgba(139, 148, 158, 0.3); color: var(--text-muted); }
+    .badge-lang { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-muted);
+    }
+    .refresh-btn {
+      padding: 0.5rem 1rem;
+      background: var(--accent-dim);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { filter: brightness(1.1); }
+    .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .token-section {
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+    .token-section label { display: block; margin-bottom: 0.4rem; color: var(--text-muted); }
+    .token-row { display: flex; gap: 0.5rem; align-items: center; }
+    .token-row input {
+      flex: 1;
+      padding: 0.4rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    .token-hint { margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted); }
+    .token-hint a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Repos GitHub · nmarchand73</h1>
+      <p class="subtitle" id="subtitle">Liens, dates, infos clés · Inclut les repos privés avec un token</p>
+    </header>
+    <div class="token-section">
+      <label for="token">Token GitHub (optionnel — pour inclure les repos privés et leurs descriptions)</label>
+      <div class="token-row">
+        <input type="password" id="token" placeholder="ghp_xxxx..." autocomplete="off" />
+        <button type="button" id="saveToken" class="refresh-btn">Enregistrer</button>
+      </div>
+      <p class="token-hint">Crée un <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Personal Access Token</a> avec le scope <code>repo</code>. Stocké localement dans ton navigateur.</p>
+    </div>
+    <div class="controls">
+      <div class="search-wrap">
+        <input type="text" id="search" placeholder="Rechercher par nom, description, langage..." autofocus />
+      </div>
+      <select id="sort" class="sort-select">
+        <option value="created-desc">Plus récents</option>
+        <option value="created-asc">Plus anciens</option>
+        <option value="name-asc">Nom A→Z</option>
+        <option value="name-desc">Nom Z→A</option>
+        <option value="stars-desc">Étoiles</option>
+      </select>
+      <button id="refresh" class="refresh-btn">Rafraîchir</button>
+      <span class="repo-count" id="count">—</span>
+    </div>
+    <div id="content"></div>
+  </div>
+  <script>
+    const GITHUB_USER = 'nmarchand73';
+    let repos = [];
+
+    const CATEGORIES_ORDER = [
+      'Jeux & fiction interactive', 'Data & analytics', 'IA / ML', 'Finance & trading',
+      'Product & startup', 'Musique & audio', 'Créatif & média', 'Web & apps',
+      'Formation & outils dev', 'Voyage & aventure', 'UAP / phénomènes', 'Divers'
+    ];
+
+    const REPO_CATEGORY = {
+      'neuromancer-text': 'Jeux & fiction interactive', 'uap_disclosure_game': 'Jeux & fiction interactive',
+      'you_are_the_hero': 'Jeux & fiction interactive', 'lachasseautresor': 'Jeux & fiction interactive',
+      'opening_trainer': 'Jeux & fiction interactive', 'RoleAndPlay': 'Jeux & fiction interactive',
+      'Balance-of-Power': 'Jeux & fiction interactive',
+      'dataengineering': 'Data & analytics', 'datascience': 'Data & analytics', 'dbt-fundamentals': 'Data & analytics',
+      'RAG_2025': 'Data & analytics', 'threadtracker': 'Data & analytics',
+      'Deep-Live-Cam': 'IA / ML', 'libriscribe': 'IA / ML', 'colorizer': 'IA / ML',
+      'nvidia': 'Finance & trading', 'nvidia-supplychain-analysis-MCP': 'Finance & trading',
+      'producthunter': 'Product & startup', 'productmaker': 'Product & startup',
+      'reddit-startup-idea-miner': 'Product & startup', 'yc_analyzer': 'Product & startup',
+      'MuseVision': 'Musique & audio', 'mp3tomidi': 'Musique & audio',
+      'new_tempsx': 'Créatif & média', 'twilightzone': 'Créatif & média', 'newsletter': 'Créatif & média',
+      'Les-Yeux-de-Mona': 'Créatif & média',
+      'website': 'Web & apps', 'ad_generator': 'Web & apps', 'business_simulator': 'Web & apps',
+      'cursor-course': 'Formation & outils dev', 'skills-build-applications-w-copilot-agent-mode': 'Formation & outils dev',
+      'skills_sandbox': 'Formation & outils dev',
+      'find-your-next-adventure': 'Voyage & aventure',
+      'uap_timeline': 'UAP / phénomènes',
+      'bk_light': 'Divers'
+    };
+
+    const REPO_DESCRIPTIONS = {
+      'ad_generator': 'Générateur de publicités automatisé.',
+      'Balance-of-Power': 'Jeu de stratégie sur les équilibres de pouvoir.',
+      'bk_light': 'Outil ou prototype léger.',
+      'business_simulator': 'Simulateur business interactif pour tester des modèles économiques.',
+      'colorizer': 'Application de colorisation d\'images assistée par IA.',
+      'cursor-course': 'Matériel de formation pour Cursor IDE.',
+      'dataengineering': 'Portfolio de projets data engineering (pipelines, ETL).',
+      'datascience': 'Projets de data science réalisés en side projects.',
+      'dbt-fundamentals': 'Projet d\'apprentissage des fondamentaux dbt pour l\'ETL.',
+      'Deep-Live-Cam': 'Face swap et deepfake vidéo en temps réel à partir d\'une seule image.',
+      'find-your-next-adventure': 'Parse et extrait les destinations des guides d\'aventure (Python).',
+      'lachasseautresor': 'Jeu de chasse au trésor interactif.',
+      'Les-Yeux-de-Mona': 'Projet artistique / créatif.',
+      'libriscribe': 'Système multi-agents IA pour écrire un livre, du concept au manuscrit.',
+      'mp3tomidi': 'Conversion de fichiers MP3 en MIDI.',
+      'MuseVision': 'Lecteur de partitions numériques avec double visualisation.',
+      'neuromancer-text': 'Jeu d\'aventure texte inspiré de Neuromancer (1988), entièrement bilingue.',
+      'newsletter': 'Gestion et génération de newsletters.',
+      'new_tempsx': 'Format podcast style Temps X — science et anticipation en 7 actes.',
+      'nvidia': 'Analyse et suivi Nvidia.',
+      'nvidia-supplychain-analysis-MCP': 'Analyse supply chain semi-conducteurs, outil MCP.',
+      'opening_trainer': 'Entraîneur d\'ouvertures aux échecs.',
+      'producthunter': 'Outil de découverte et analyse de produits.',
+      'productmaker': 'Outil de création et validation de produits.',
+      'RAG_2025': 'Retrieval Augmented Generation — prototypes RAG et LLM.',
+      'reddit-startup-idea-miner': 'Extraction d\'idées startups depuis Reddit.',
+      'RoleAndPlay': 'Jeu de rôle ou générateur de scénarios interactifs.',
+      'skills-build-applications-w-copilot-agent-mode': 'Exercice : construire une app avec Copilot en mode agent.',
+      'skills_sandbox': 'Bac à sable pour Skills Claude / Cursor.',
+      'threadtracker': 'Suivi et analyse de fils de discussion.',
+      'twilightzone': 'Projet inspiré de La Quatrième Dimension (anthologie, fiction).',
+      'uap_disclosure_game': 'Jeu sur la divulgation UAP / phénomènes aériens non identifiés.',
+      'uap_timeline': 'Timeline interactive des événements et divulgations UAP.',
+      'website': 'Site web Flutter (fork).',
+      'yc_analyzer': 'Analyse des startups Y Combinator (Julia).',
+      'you_are_the_hero': 'Livre dont vous êtes le héros — générateur de scénarios à branches.'
+    };
+
+    const FALLBACK_REPOS = [
+      {"name":"ad_generator","desc":null,"url":"https://github.com/nmarchand73/ad_generator","created":"2025-05-29T20:21:46Z","updated":"2025-05-29T20:33:20Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
+      {"name":"Balance-of-Power","desc":null,"url":"https://github.com/nmarchand73/Balance-of-Power","created":"2025-10-26T23:02:07Z","updated":"2025-10-26T23:11:37Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
+      {"name":"bk_light","desc":null,"url":"https://github.com/nmarchand73/bk_light","created":"2026-01-18T19:23:06Z","updated":"2026-01-18T19:34:04Z","language":"HTML","stars":0,"topics":[],"fork":false},
+      {"name":"business_simulator","desc":null,"url":"https://github.com/nmarchand73/business_simulator","created":"2025-09-10T22:28:30Z","updated":"2025-12-01T21:30:42Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
+      {"name":"colorizer","desc":null,"url":"https://github.com/nmarchand73/colorizer","created":"2025-12-03T22:28:29Z","updated":"2025-12-03T23:02:19Z","language":"HTML","stars":0,"topics":[],"fork":false},
+      {"name":"cursor-course","desc":null,"url":"https://github.com/nmarchand73/cursor-course","created":"2025-05-29T16:38:14Z","updated":"2025-05-29T16:59:43Z","language":"TypeScript","stars":0,"topics":[],"fork":true},
+      {"name":"dataengineering","desc":"Several data engineering projects done this year","url":"https://github.com/nmarchand73/dataengineering","created":"2017-04-24T17:34:16Z","updated":"2017-04-24T17:34:16Z","language":null,"stars":0,"topics":[],"fork":false},
+      {"name":"datascience","desc":"Several datascience projects delivered this year on my free time","url":"https://github.com/nmarchand73/datascience","created":"2017-04-24T17:33:27Z","updated":"2017-04-24T17:36:16Z","language":null,"stars":1,"topics":[],"fork":false},
+      {"name":"dbt-fundamentals","desc":null,"url":"https://github.com/nmarchand73/dbt-fundamentals","created":"2022-02-23T18:03:50Z","updated":"2022-02-23T18:03:50Z","language":null,"stars":0,"topics":[],"fork":false},
+      {"name":"Deep-Live-Cam","desc":"real time face swap and one-click video deepfake with only a single image","url":"https://github.com/nmarchand73/Deep-Live-Cam","created":"2025-05-06T06:44:04Z","updated":"2025-05-06T06:44:04Z","language":null,"stars":0,"topics":[],"fork":true},
+      {"name":"find-your-next-adventure","desc":"A Python project for parsing adventure guides and extracting destination information","url":"https://github.com/nmarchand73/find-your-next-adventure","created":"2025-08-04T20:23:59Z","updated":"2025-11-27T11:38:10Z","language":"Python","stars":1,"topics":[],"fork":false},
+      {"name":"lachasseautresor","desc":null,"url":"https://github.com/nmarchand73/lachasseautresor","created":"2025-08-30T21:18:43Z","updated":"2025-08-30T23:14:54Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"Les-Yeux-de-Mona","desc":null,"url":"https://github.com/nmarchand73/Les-Yeux-de-Mona","created":"2025-12-30T14:26:58Z","updated":"2026-01-07T21:55:08Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
+      {"name":"libriscribe","desc":"Libriscribe is an AI-powered open-source book creation system. Multi-agent approach for writing books.","url":"https://github.com/nmarchand73/libriscribe","created":"2025-09-07T19:09:13Z","updated":"2025-09-07T19:09:13Z","language":null,"stars":0,"topics":[],"fork":true},
+      {"name":"mp3tomidi","desc":null,"url":"https://github.com/nmarchand73/mp3tomidi","created":"2025-10-19T12:20:59Z","updated":"2025-10-19T18:16:23Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"MuseVision","desc":"A digital music score reader with dual visualization","url":"https://github.com/nmarchand73/MuseVision","created":"2025-04-04T07:01:58Z","updated":"2025-04-04T07:55:24Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
+      {"name":"neuromancer-text","desc":null,"url":"https://github.com/nmarchand73/neuromancer-text","created":"2026-02-09T16:51:20Z","updated":"2026-02-09T18:42:32Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"newsletter","desc":null,"url":"https://github.com/nmarchand73/newsletter","created":"2025-09-10T21:33:43Z","updated":"2025-09-10T22:21:00Z","language":null,"stars":0,"topics":[],"fork":false},
+      {"name":"new_tempsx","desc":null,"url":"https://github.com/nmarchand73/new_tempsx","created":"2025-12-13T17:43:27Z","updated":"2026-02-23T05:28:36Z","language":"Python","stars":2,"topics":[],"fork":false},
+      {"name":"nvidia","desc":null,"url":"https://github.com/nmarchand73/nvidia","created":"2025-11-02T22:47:36Z","updated":"2025-11-02T23:08:29Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
+      {"name":"nvidia-supplychain-analysis-MCP","desc":null,"url":"https://github.com/nmarchand73/nvidia-supplychain-analysis-MCP","created":"2025-11-25T21:37:20Z","updated":"2025-11-25T21:58:31Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"opening_trainer","desc":null,"url":"https://github.com/nmarchand73/opening_trainer","created":"2025-08-12T07:04:48Z","updated":"2025-08-12T07:47:56Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"producthunter","desc":null,"url":"https://github.com/nmarchand73/producthunter","created":"2025-08-08T07:31:04Z","updated":"2025-08-08T08:42:08Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"productmaker","desc":null,"url":"https://github.com/nmarchand73/productmaker","created":"2023-09-24T14:46:05Z","updated":"2025-09-11T10:57:35Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
+      {"name":"RAG_2025","desc":null,"url":"https://github.com/nmarchand73/RAG_2025","created":"2025-10-26T13:05:08Z","updated":"2025-10-26T13:11:08Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"reddit-startup-idea-miner","desc":null,"url":"https://github.com/nmarchand73/reddit-startup-idea-miner","created":"2025-08-04T20:12:27Z","updated":"2025-08-04T20:17:08Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"RoleAndPlay","desc":null,"url":"https://github.com/nmarchand73/RoleAndPlay","created":"2025-10-18T22:10:58Z","updated":"2025-10-18T22:20:39Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"skills-build-applications-w-copilot-agent-mode","desc":"Exercise: Build my application with Copilot agent mode","url":"https://github.com/nmarchand73/skills-build-applications-w-copilot-agent-mode","created":"2025-05-16T09:28:02Z","updated":"2025-05-16T09:28:21Z","language":"Shell","stars":0,"topics":[],"fork":false},
+      {"name":"skills_sandbox","desc":null,"url":"https://github.com/nmarchand73/skills_sandbox","created":"2025-12-04T22:24:57Z","updated":"2026-01-11T22:21:54Z","language":"Python","stars":1,"topics":[],"fork":false},
+      {"name":"threadtracker","desc":null,"url":"https://github.com/nmarchand73/threadtracker","created":"2025-04-07T23:22:26Z","updated":"2025-04-07T23:28:20Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
+      {"name":"twilightzone","desc":null,"url":"https://github.com/nmarchand73/twilightzone","created":"2025-12-06T23:04:20Z","updated":"2026-03-06T19:26:19Z","language":"JavaScript","stars":0,"topics":[],"fork":false},
+      {"name":"uap_disclosure_game","desc":null,"url":"https://github.com/nmarchand73/uap_disclosure_game","created":"2026-02-21T21:53:57Z","updated":"2026-02-21T23:03:17Z","language":"Python","stars":0,"topics":[],"fork":false},
+      {"name":"uap_timeline","desc":null,"url":"https://github.com/nmarchand73/uap_timeline","created":"2026-02-20T13:50:38Z","updated":"2026-03-07T18:48:49Z","language":"Astro","stars":0,"topics":[],"fork":false},
+      {"name":"website","desc":"Flutter web site","url":"https://github.com/nmarchand73/website","created":"2019-11-24T18:22:31Z","updated":"2019-11-24T18:22:32Z","language":null,"stars":0,"topics":[],"fork":true},
+      {"name":"yc_analyzer","desc":null,"url":"https://github.com/nmarchand73/yc_analyzer","created":"2025-10-05T17:53:56Z","updated":"2025-10-05T22:05:53Z","language":"Julia","stars":0,"topics":[],"fork":false},
+      {"name":"you_are_the_hero","desc":null,"url":"https://github.com/nmarchand73/you_are_the_hero","created":"2025-08-15T16:00:41Z","updated":"2025-08-30T21:16:24Z","language":"Python","stars":0,"topics":[],"fork":false}
+    ];
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function normalize(r) {
+      const name = r.name;
+      const desc = r.description || REPO_DESCRIPTIONS[name] || null;
+      const category = REPO_CATEGORY[name] || 'Divers';
+      return {
+        name,
+        desc,
+        category,
+        url: r.html_url || r.url,
+        created: r.created_at || r.created,
+        updated: r.pushed_at || r.updated_at || r.updated,
+        language: r.language,
+        stars: r.stargazers_count ?? r.stars ?? 0,
+        topics: r.topics || [],
+        fork: r.fork ?? false,
+        private: r.private ?? false
+      };
+    }
+
+    const TOKEN_KEY = 'github_repos_token';
+
+    function getStoredToken() {
+      try {
+        return localStorage.getItem(TOKEN_KEY) || '';
+      } catch (_) { return ''; }
+    }
+
+    async function fetchRepos() {
+      const token = getStoredToken().trim();
+      const headers = { Accept: 'application/vnd.github.v3+json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      try {
+        const url = token
+          ? `https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator`
+          : `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`;
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          if (res.status === 401) console.warn('Token invalide ou expiré');
+          throw new Error(res.status);
+        }
+        let data = await res.json();
+        if (token) data = data.filter(r => r.owner?.login === GITHUB_USER);
+        repos = data.map(normalize);
+      } catch (_) {
+        repos = FALLBACK_REPOS.map(normalize);
+      }
+      const priv = repos.filter(r => r.private).length;
+      document.getElementById('subtitle').textContent = priv > 0
+        ? `${repos.length} dépôts (dont ${priv} privés) · Liens, dates, infos clés`
+        : `${repos.length} dépôts · Liens, dates, infos clés`;
+      render();
+    }
+
+    function filterAndSort() {
+      const q = (document.getElementById('search').value || '').toLowerCase().trim();
+      const sortVal = document.getElementById('sort').value;
+      let list = repos.filter(r => {
+        if (!q) return true;
+        const haystack = [
+          r.name,
+          r.desc || '',
+          r.category || '',
+          r.language || '',
+          ...(r.topics || [])
+        ].join(' ').toLowerCase();
+        return haystack.includes(q);
+      });
+
+      const [field, dir] = sortVal.split('-');
+      list.sort((a, b) => {
+        let va, vb;
+        if (field === 'created') {
+          va = new Date(a.created || 0).getTime();
+          vb = new Date(b.created || 0).getTime();
+        } else if (field === 'name') {
+          va = (a.name || '').toLowerCase();
+          vb = (b.name || '').toLowerCase();
+        } else if (field === 'stars') {
+          va = a.stars ?? 0;
+          vb = b.stars ?? 0;
+        }
+        if (dir === 'desc') [va, vb] = [vb, va];
+        return va < vb ? -1 : va > vb ? 1 : 0;
+      });
+
+      const byCategory = {};
+      for (const r of list) {
+        const cat = r.category || 'Divers';
+        if (!byCategory[cat]) byCategory[cat] = [];
+        byCategory[cat].push(r);
+      }
+      return byCategory;
+    }
+
+    function render() {
+      const byCategory = filterAndSort();
+      const content = document.getElementById('content');
+      const total = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0);
+      document.getElementById('count').textContent = `${total} / ${repos.length}`;
+
+      if (total === 0) {
+        content.innerHTML = '<div class="empty-state">Aucun repo ne correspond à la recherche.</div>';
+        return;
+      }
+
+      let html = '';
+      const orderedCats = [...CATEGORIES_ORDER];
+      const extraCats = Object.keys(byCategory).filter(c => !CATEGORIES_ORDER.includes(c));
+      for (const c of extraCats) orderedCats.push(c);
+      const catsToShow = orderedCats.filter(c => byCategory[c] && byCategory[c].length > 0);
+      for (const cat of catsToShow) {
+        const list = byCategory[cat];
+        html += `
+          <section class="category-section">
+            <h2 class="category-title">
+              <span class="category-badge">${list.length}</span>${cat}
+            </h2>
+            <div class="grid">
+              ${list.map(r => `
+                <article class="card">
+                  <h3 class="card-title">
+                    <a href="${r.url}" target="_blank" rel="noopener">${r.name}</a>
+                    ${r.private ? '<span class="badge badge-private">privé</span>' : ''}
+                    ${r.fork ? '<span class="badge badge-fork">fork</span>' : ''}
+                  </h3>
+                  <div class="card-meta">
+                    <span title="Créé le">📅 ${formatDate(r.created)}</span>
+                    ${r.language ? `<span class="badge badge-lang">${r.language}</span>` : ''}
+                    ${r.stars > 0 ? `<span>⭐ ${r.stars}</span>` : ''}
+                  </div>
+                  <p class="card-desc">${r.desc || '—'}</p>
+                </article>
+              `).join('')}
+            </div>
+          </section>
+        `;
+      }
+      content.innerHTML = html;
+    }
+
+    document.getElementById('token').value = getStoredToken();
+    document.getElementById('saveToken').addEventListener('click', () => {
+      const tok = document.getElementById('token').value.trim();
+      try { localStorage.setItem(TOKEN_KEY, tok); } catch (_) {}
+      fetchRepos();
+    });
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('sort').addEventListener('change', render);
+    document.getElementById('refresh').addEventListener('click', () => {
+      const btn = document.getElementById('refresh');
+      btn.disabled = true;
+      btn.textContent = 'Chargement…';
+      fetchRepos().then(() => {
+        btn.disabled = false;
+        btn.textContent = 'Rafraîchir';
+      });
+    });
+
+    fetchRepos();
+  </script>
+</body>
+</html>
