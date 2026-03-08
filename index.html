@@ -323,43 +323,43 @@
     };
 
     const REPO_DESCRIPTIONS = {
-      'repositories_toc': 'Table des matières des dépôts GitHub — liens, recherche, tri par catégorie.',
-      'ad_generator': 'Générateur de publicités automatisé.',
-      'Balance-of-Power': 'Jeu de stratégie sur les équilibres de pouvoir.',
-      'bk_light': 'Outil ou prototype léger.',
-      'business_simulator': 'Simulateur business interactif pour tester des modèles économiques.',
-      'colorizer': 'Application de colorisation d\'images assistée par IA.',
-      'cursor-course': 'Matériel de formation pour Cursor IDE.',
-      'dataengineering': 'Portfolio de projets data engineering (pipelines, ETL).',
-      'datascience': 'Projets de data science réalisés en side projects.',
-      'dbt-fundamentals': 'Projet d\'apprentissage des fondamentaux dbt pour l\'ETL.',
-      'Deep-Live-Cam': 'Face swap et deepfake vidéo en temps réel à partir d\'une seule image.',
-      'find-your-next-adventure': 'Parse et extrait les destinations des guides d\'aventure (Python).',
-      'lachasseautresor': 'Jeu de chasse au trésor interactif.',
-      'Les-Yeux-de-Mona': 'Projet artistique / créatif.',
-      'libriscribe': 'Système multi-agents IA pour écrire un livre, du concept au manuscrit.',
-      'mp3tomidi': 'Conversion de fichiers MP3 en MIDI.',
-      'MuseVision': 'Lecteur de partitions numériques avec double visualisation.',
-      'neuromancer-text': 'Jeu d\'aventure texte inspiré de Neuromancer (1988), entièrement bilingue.',
-      'newsletter': 'Gestion et génération de newsletters.',
-      'new_tempsx': 'Format podcast style Temps X — science et anticipation en 7 actes.',
-      'nvidia': 'Analyse et suivi Nvidia.',
-      'nvidia-supplychain-analysis-MCP': 'Analyse supply chain semi-conducteurs, outil MCP.',
-      'opening_trainer': 'Entraîneur d\'ouvertures aux échecs.',
-      'producthunter': 'Outil de découverte et analyse de produits.',
-      'productmaker': 'Outil de création et validation de produits.',
-      'RAG_2025': 'Retrieval Augmented Generation — prototypes RAG et LLM.',
-      'reddit-startup-idea-miner': 'Extraction d\'idées startups depuis Reddit.',
-      'RoleAndPlay': 'Jeu de rôle ou générateur de scénarios interactifs.',
-      'skills-build-applications-w-copilot-agent-mode': 'Exercice : construire une app avec Copilot en mode agent.',
-      'skills_sandbox': 'Bac à sable pour Skills Claude / Cursor.',
-      'threadtracker': 'Suivi et analyse de fils de discussion.',
-      'twilightzone': 'Projet inspiré de La Quatrième Dimension (anthologie, fiction).',
-      'uap_disclosure_game': 'Jeu sur la divulgation UAP / phénomènes aériens non identifiés.',
-      'uap_timeline': 'Timeline interactive des événements et divulgations UAP.',
-      'website': 'Site web Flutter (fork).',
-      'yc_analyzer': 'Analyse des startups Y Combinator (Julia).',
-      'you_are_the_hero': 'Livre dont vous êtes le héros — générateur de scénarios à branches.'
+      'repositories_toc': 'GitHub repos table of contents — links, search, category sort.',
+      'ad_generator': 'Automated ad generator.',
+      'Balance-of-Power': 'Strategy game about power balance.',
+      'bk_light': 'Lightweight tool or prototype.',
+      'business_simulator': 'Interactive business simulator to test economic models.',
+      'colorizer': 'AI-assisted image colorization application.',
+      'cursor-course': 'Cursor IDE training material.',
+      'dataengineering': 'Data engineering projects portfolio (pipelines, ETL).',
+      'datascience': 'Data science side projects.',
+      'dbt-fundamentals': 'Learning project for dbt ETL fundamentals.',
+      'Deep-Live-Cam': 'Real-time face swap and one-click video deepfake from a single image.',
+      'find-your-next-adventure': 'Parse and extract destinations from adventure guides (Python).',
+      'lachasseautresor': 'Interactive treasure hunt game.',
+      'Les-Yeux-de-Mona': 'Artistic / creative project.',
+      'libriscribe': 'Multi-agent AI system for writing books, from concept to manuscript.',
+      'mp3tomidi': 'Convert MP3 files to MIDI.',
+      'MuseVision': 'Digital music score reader with dual visualization.',
+      'neuromancer-text': 'Text adventure inspired by Neuromancer (1988), fully bilingual.',
+      'newsletter': 'Newsletter management and generation.',
+      'new_tempsx': 'Temps X style podcast format — science and anticipation in 7 acts.',
+      'nvidia': 'Nvidia analysis and tracking.',
+      'nvidia-supplychain-analysis-MCP': 'Semiconductor supply chain analysis, MCP tool.',
+      'opening_trainer': 'Chess opening trainer.',
+      'producthunter': 'Product discovery and analysis tool.',
+      'productmaker': 'Product creation and validation tool.',
+      'RAG_2025': 'Retrieval Augmented Generation — RAG and LLM prototypes.',
+      'reddit-startup-idea-miner': 'Extract startup ideas from Reddit.',
+      'RoleAndPlay': 'RPG or interactive scenario generator.',
+      'skills-build-applications-w-copilot-agent-mode': 'Exercise: build an app with Copilot agent mode.',
+      'skills_sandbox': 'Sandbox for Claude / Cursor Skills.',
+      'threadtracker': 'Discussion thread tracking and analysis.',
+      'twilightzone': 'The Twilight Zone–inspired project (anthology, fiction).',
+      'uap_disclosure_game': 'Game about UAP disclosure / unidentified aerial phenomena.',
+      'uap_timeline': 'Interactive timeline of UAP events and disclosures.',
+      'website': 'Flutter web site (fork).',
+      'yc_analyzer': 'Y Combinator startup analysis (Julia).',
+      'you_are_the_hero': 'Choose-your-own-adventure — branching scenario generator.'
     };
 
     const FALLBACK_REPOS = [
@@ -410,14 +410,18 @@
 
     function normalize(r) {
       const name = r.name;
-      const desc = r.description || REPO_DESCRIPTIONS[name] || null;
+      const desc = REPO_DESCRIPTIONS[name] || r.description || null;
       const category = REPO_CATEGORY[name] || 'Divers';
       const hasPages = r.has_pages ?? REPO_HAS_PAGES.includes(name);
+      const repoUrl = r.html_url || r.url;
+      const owner = r.owner?.login || (repoUrl && repoUrl.match(/github\.com\/([^\/]+)\//)?.[1]) || GITHUB_USER;
       return {
         name,
         desc,
         category,
-        url: r.html_url || r.url,
+        url: repoUrl,
+        readmeUrl: repoUrl + '#readme',
+        owner,
         created: r.created_at || r.created,
         updated: r.pushed_at || r.updated_at || r.updated,
         language: r.language,
@@ -593,7 +597,10 @@
                     </div>
                     ` : ''}
                   </div>
-                  ${r.hasPages ? `<div class="card-links"><a href="https://${GITHUB_USER}.github.io/${r.name}/" target="_blank" rel="noopener">🌐 Page publiée</a></div>` : ''}
+                  <div class="card-links">
+                    <a href="${r.readmeUrl}" target="_blank" rel="noopener">📄 README</a>
+                    ${r.hasPages ? `<a href="https://${r.owner}.github.io/${r.name}/" target="_blank" rel="noopener">🌐 Page</a>` : ''}
+                  </div>
                   <p class="card-desc">${r.desc || '—'}</p>
                 </article>
               `).join('')}
