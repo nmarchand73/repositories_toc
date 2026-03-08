@@ -89,35 +89,63 @@
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 1.25rem;
       transition: border-color 0.15s, box-shadow 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
     }
     .card:hover {
       border-color: var(--accent-dim);
       box-shadow: 0 0 0 1px var(--accent-dim);
     }
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
     .card-title {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 1.05rem;
     }
     .card-title a {
       color: var(--accent);
       text-decoration: none;
     }
     .card-title a:hover { text-decoration: underline; }
-    .card-meta {
+    .card-badges {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem 1rem;
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      gap: 0.35rem;
     }
-    .card-meta span { display: flex; align-items: center; gap: 0.25rem; }
+    .card-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.5rem 1rem;
+      padding: 0.6rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+    .card-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .card-stat-label {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .card-stat-value {
+      color: var(--text);
+      font-weight: 500;
+    }
     .card-desc {
-      margin-top: 0.75rem;
       font-size: 0.875rem;
       color: var(--text-muted);
       line-height: 1.5;
@@ -150,15 +178,26 @@
       font-size: 0.7rem;
       font-weight: 500;
     }
-    .badge-fork { background: rgba(210, 153, 34, 0.2); color: var(--orange); }
-    .badge-lang { background: rgba(63, 185, 80, 0.15); color: var(--green); }
-    .card-links { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .badge-fork { background: rgba(210, 153, 34, 0.25); color: var(--orange); }
+    .badge-lang { background: rgba(63, 185, 80, 0.2); color: var(--green); }
+    .badge-stars { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+    .card-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
     .card-links a {
       font-size: 0.8rem;
       color: var(--accent);
       text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      background: rgba(88, 166, 255, 0.1);
+      border-radius: 4px;
     }
-    .card-links a:hover { text-decoration: underline; }
+    .card-links a:hover {
+      background: rgba(88, 166, 255, 0.2);
+      text-decoration: none;
+    }
     .empty-state {
       grid-column: 1 / -1;
       text-align: center;
@@ -458,18 +497,35 @@
             <div class="grid">
               ${list.map(r => `
                 <article class="card">
-                  <h3 class="card-title">
-                    <a href="${r.url}" target="_blank" rel="noopener">${r.name}</a>
-                    ${r.fork ? '<span class="badge badge-fork">fork</span>' : ''}
-                  </h3>
-                  <div class="card-meta">
-                    <span title="Créé le">📅 ${formatDate(r.created)}</span>
-                    <span title="Dernier commit">↗ ${formatDate(r.updated)}</span>
-                    ${r.commits != null ? `<span title="Nombre de commits">${r.commits} commits</span>` : ''}
-                    ${r.language ? `<span class="badge badge-lang">${r.language}</span>` : ''}
-                    ${r.stars > 0 ? `<span>⭐ ${r.stars}</span>` : ''}
+                  <div class="card-header">
+                    <h3 class="card-title">
+                      <a href="${r.url}" target="_blank" rel="noopener">${r.name}</a>
+                    </h3>
+                    ${(r.fork || r.language || r.stars > 0) ? `
+                    <div class="card-badges">
+                      ${r.fork ? '<span class="badge badge-fork">fork</span>' : ''}
+                      ${r.language ? `<span class="badge badge-lang">${r.language}</span>` : ''}
+                      ${r.stars > 0 ? `<span class="badge badge-stars">⭐ ${r.stars}</span>` : ''}
+                    </div>
+                    ` : ''}
                   </div>
-                  ${r.hasPages ? `<div class="card-links"><a href="https://${GITHUB_USER}.github.io/${r.name}/" target="_blank" rel="noopener" title="Page publiée">🌐 Page</a></div>` : ''}
+                  <div class="card-stats">
+                    <div class="card-stat">
+                      <span class="card-stat-label">Créé</span>
+                      <span class="card-stat-value">${formatDate(r.created)}</span>
+                    </div>
+                    <div class="card-stat">
+                      <span class="card-stat-label">Dernier commit</span>
+                      <span class="card-stat-value">${formatDate(r.updated)}</span>
+                    </div>
+                    ${r.commits != null ? `
+                    <div class="card-stat">
+                      <span class="card-stat-label">Commits</span>
+                      <span class="card-stat-value">${r.commits}</span>
+                    </div>
+                    ` : ''}
+                  </div>
+                  ${r.hasPages ? `<div class="card-links"><a href="https://${GITHUB_USER}.github.io/${r.name}/" target="_blank" rel="noopener">🌐 Page publiée</a></div>` : ''}
                   <p class="card-desc">${r.desc || '—'}</p>
                 </article>
               `).join('')}
