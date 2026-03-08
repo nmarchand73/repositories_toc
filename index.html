@@ -179,8 +179,39 @@
       font-weight: 500;
     }
     .badge-fork { background: rgba(210, 153, 34, 0.25); color: var(--orange); }
+    .badge-private { background: rgba(139, 148, 158, 0.3); color: var(--text-muted); }
     .badge-lang { background: rgba(63, 185, 80, 0.2); color: var(--green); }
     .badge-stars { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+    .auth-section {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .auth-section summary {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .auth-section summary:hover { color: var(--accent); }
+    .auth-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
+    .auth-row input[type="password"] {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      min-width: 200px;
+    }
     .card-links {
       display: flex;
       flex-wrap: wrap;
@@ -224,6 +255,18 @@
       <h1>Repos GitHub · nmarchand73</h1>
       <p class="subtitle" id="subtitle">37 dépôts · Liens, dates, infos clés</p>
     </header>
+    <details class="auth-section">
+      <summary>Inclure les dépôts privés (token GitHub)</summary>
+      <p class="subtitle" style="margin: 0.5rem 0 0 0; font-size: 0.8rem;">Token avec scope <code>repo</code>. Stocké en local, jamais envoyé ailleurs.</p>
+      <div class="auth-row">
+        <input type="password" id="gh-token" placeholder="ghp_xxxx..." autocomplete="off" />
+        <button type="button" id="auth-btn" class="refresh-btn">Charger avec token</button>
+        <label style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem;">
+          <input type="checkbox" id="auth-remember" /> Mémoriser
+        </label>
+        <button type="button" id="auth-clear" class="refresh-btn" style="background: transparent; border: 1px solid var(--border); display: none;">Déconnecter</button>
+      </div>
+    </details>
     <div class="controls">
       <div class="search-wrap">
         <input type="text" id="search" placeholder="Rechercher par nom, description, langage..." autofocus />
@@ -244,7 +287,9 @@
   </div>
   <script>
     const GITHUB_USER = 'nmarchand73';
+    const TOKEN_KEY = 'gh_repos_toc_token';
     let repos = [];
+    let ghToken = localStorage.getItem(TOKEN_KEY) || '';
 
     const CATEGORIES_ORDER = [
       'Jeux & fiction interactive', 'Data & analytics', 'IA / ML', 'Finance & trading',
@@ -379,22 +424,34 @@
         stars: r.stargazers_count ?? r.stars ?? 0,
         topics: r.topics || [],
         fork: r.fork ?? false,
+        private: r.private ?? false,
         hasPages,
         commits: r.commits ?? null
       };
     }
 
+    function authHeaders() {
+      const t = ghToken || document.getElementById('gh-token')?.value?.trim();
+      if (!t) return {};
+      return { 'Authorization': `Bearer ${t}` };
+    }
+
     async function fetchCommitCounts() {
+      const headers = { 'Content-Type': 'application/json', ...authHeaders() };
+      const useViewer = !!headers['Authorization'];
+      const query = useViewer
+        ? `query { viewer { repositories(first: 100) { nodes { name defaultBranchRef { target { ... on Commit { history { totalCount } } } } } } } }`
+        : `query { user(login: "${GITHUB_USER}") { repositories(first: 100) { nodes { name defaultBranchRef { target { ... on Commit { history { totalCount } } } } } } } }`;
       try {
-        const query = `query { user(login: "${GITHUB_USER}") { repositories(first: 100) { nodes { name defaultBranchRef { target { ... on Commit { history { totalCount } } } } } } } }`;
         const res = await fetch('https://api.github.com/graphql', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ query })
         });
         if (!res.ok) return {};
         const json = await res.json();
-        const nodes = json?.data?.user?.repositories?.nodes ?? [];
+        const root = useViewer ? json?.data?.viewer : json?.data?.user;
+        const nodes = root?.repositories?.nodes ?? [];
         const map = {};
         for (const n of nodes) {
           const count = n?.defaultBranchRef?.target?.history?.totalCount ?? 0;
@@ -405,13 +462,22 @@
     }
 
     async function fetchRepos() {
+      const token = ghToken || document.getElementById('gh-token')?.value?.trim();
+      const useAuth = !!token;
+      const restUrl = useAuth
+        ? 'https://api.github.com/user/repos?per_page=100&visibility=all'
+        : `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`;
+      const headers = { ...authHeaders() };
+
       try {
         const [restRes, commitMap] = await Promise.all([
-          fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`),
+          fetch(restUrl, { headers }),
           fetchCommitCounts()
         ]);
         if (!restRes.ok) throw new Error(restRes.status);
         const data = await restRes.json();
+        const owner = data[0]?.owner?.login || GITHUB_USER;
+        document.querySelector('h1').textContent = `Repos GitHub · ${owner}`;
         repos = data.map(r => {
           const norm = normalize(r);
           norm.commits = commitMap[r.name] ?? null;
@@ -433,6 +499,7 @@
           r.desc || '',
           r.category || '',
           r.language || '',
+          r.private ? 'privé' : '',
           ...(r.topics || [])
         ].join(' ').toLowerCase();
         return haystack.includes(q);
@@ -501,8 +568,9 @@
                     <h3 class="card-title">
                       <a href="${r.url}" target="_blank" rel="noopener">${r.name}</a>
                     </h3>
-                    ${(r.fork || r.language || r.stars > 0) ? `
+                    ${(r.fork || r.private || r.language || r.stars > 0) ? `
                     <div class="card-badges">
+                      ${r.private ? '<span class="badge badge-private">privé</span>' : ''}
                       ${r.fork ? '<span class="badge badge-fork">fork</span>' : ''}
                       ${r.language ? `<span class="badge badge-lang">${r.language}</span>` : ''}
                       ${r.stars > 0 ? `<span class="badge badge-stars">⭐ ${r.stars}</span>` : ''}
@@ -548,6 +616,38 @@
       });
     });
 
+    document.getElementById('auth-btn').addEventListener('click', () => {
+      const input = document.getElementById('gh-token');
+      const token = input?.value?.trim();
+      if (!token) return;
+      const remember = document.getElementById('auth-remember')?.checked;
+      ghToken = token;
+      if (remember) localStorage.setItem(TOKEN_KEY, token);
+      else localStorage.removeItem(TOKEN_KEY);
+      input.value = '';
+      input.placeholder = 'Token actif';
+      document.getElementById('auth-clear').style.display = 'inline-block';
+      const btn = document.getElementById('auth-btn');
+      btn.disabled = true;
+      btn.textContent = 'Chargement…';
+      fetchRepos().then(() => {
+        btn.disabled = false;
+        btn.textContent = 'Charger avec token';
+      });
+    });
+
+    if (ghToken) {
+      document.getElementById('gh-token').placeholder = 'Token actif';
+      document.getElementById('auth-clear').style.display = 'inline-block';
+    }
+    document.getElementById('auth-clear').addEventListener('click', () => {
+      ghToken = '';
+      localStorage.removeItem(TOKEN_KEY);
+      document.getElementById('gh-token').placeholder = 'ghp_xxxx...';
+      document.getElementById('auth-clear').style.display = 'none';
+      document.querySelector('h1').textContent = 'Repos GitHub · ' + GITHUB_USER;
+      fetchRepos();
+    });
     fetchRepos();
   </script>
 </body>
