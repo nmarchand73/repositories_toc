@@ -152,6 +152,13 @@
     }
     .badge-fork { background: rgba(210, 153, 34, 0.2); color: var(--orange); }
     .badge-lang { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .card-links { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .card-links a {
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .card-links a:hover { text-decoration: underline; }
     .empty-state {
       grid-column: 1 / -1;
       text-align: center;
@@ -176,7 +183,7 @@
   <div class="container">
     <header>
       <h1>Repos GitHub · nmarchand73</h1>
-      <p class="subtitle">36 dépôts · Liens, dates, infos clés</p>
+      <p class="subtitle" id="subtitle">37 dépôts · Liens, dates, infos clés</p>
     </header>
     <div class="controls">
       <div class="search-wrap">
@@ -204,7 +211,10 @@
       'Formation & outils dev', 'Voyage & aventure', 'UAP / phénomènes', 'Divers'
     ];
 
+    const REPO_HAS_PAGES = ['repositories_toc', 'uap_disclosure_game', 'uap_timeline', 'nvidia'];
+
     const REPO_CATEGORY = {
+      'repositories_toc': 'Web & apps',
       'neuromancer-text': 'Jeux & fiction interactive', 'uap_disclosure_game': 'Jeux & fiction interactive',
       'you_are_the_hero': 'Jeux & fiction interactive', 'lachasseautresor': 'Jeux & fiction interactive',
       'opening_trainer': 'Jeux & fiction interactive', 'RoleAndPlay': 'Jeux & fiction interactive',
@@ -227,6 +237,7 @@
     };
 
     const REPO_DESCRIPTIONS = {
+      'repositories_toc': 'Table des matières des dépôts GitHub — liens, recherche, tri par catégorie.',
       'ad_generator': 'Générateur de publicités automatisé.',
       'Balance-of-Power': 'Jeu de stratégie sur les équilibres de pouvoir.',
       'bk_light': 'Outil ou prototype léger.',
@@ -266,6 +277,7 @@
     };
 
     const FALLBACK_REPOS = [
+      {"name":"repositories_toc","desc":null,"url":"https://github.com/nmarchand73/repositories_toc","created":"2026-03-08T19:48:33Z","updated":"2026-03-08T19:51:10Z","language":"HTML","stars":0,"topics":[],"fork":false,"has_pages":true},
       {"name":"ad_generator","desc":null,"url":"https://github.com/nmarchand73/ad_generator","created":"2025-05-29T20:21:46Z","updated":"2025-05-29T20:33:20Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
       {"name":"Balance-of-Power","desc":null,"url":"https://github.com/nmarchand73/Balance-of-Power","created":"2025-10-26T23:02:07Z","updated":"2025-10-26T23:11:37Z","language":"TypeScript","stars":0,"topics":[],"fork":false},
       {"name":"bk_light","desc":null,"url":"https://github.com/nmarchand73/bk_light","created":"2026-01-18T19:23:06Z","updated":"2026-01-18T19:34:04Z","language":"HTML","stars":0,"topics":[],"fork":false},
@@ -314,6 +326,7 @@
       const name = r.name;
       const desc = r.description || REPO_DESCRIPTIONS[name] || null;
       const category = REPO_CATEGORY[name] || 'Divers';
+      const hasPages = r.has_pages ?? REPO_HAS_PAGES.includes(name);
       return {
         name,
         desc,
@@ -324,7 +337,8 @@
         language: r.language,
         stars: r.stargazers_count ?? r.stars ?? 0,
         topics: r.topics || [],
-        fork: r.fork ?? false
+        fork: r.fork ?? false,
+        hasPages
       };
     }
 
@@ -386,6 +400,7 @@
       const content = document.getElementById('content');
       const total = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0);
       document.getElementById('count').textContent = `${total} / ${repos.length}`;
+      document.getElementById('subtitle').textContent = `${repos.length} dépôts · Liens, dates, infos clés`;
 
       if (total === 0) {
         content.innerHTML = '<div class="empty-state">Aucun repo ne correspond à la recherche.</div>';
@@ -416,6 +431,7 @@
                     ${r.language ? `<span class="badge badge-lang">${r.language}</span>` : ''}
                     ${r.stars > 0 ? `<span>⭐ ${r.stars}</span>` : ''}
                   </div>
+                  ${r.hasPages ? `<div class="card-links"><a href="https://${GITHUB_USER}.github.io/${r.name}/" target="_blank" rel="noopener" title="Page publiée">🌐 Page</a></div>` : ''}
                   <p class="card-desc">${r.desc || '—'}</p>
                 </article>
               `).join('')}
